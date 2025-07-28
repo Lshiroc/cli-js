@@ -4,78 +4,75 @@ import process from "node:process";
 import fs from "node:fs"
 import Editor from "./editor";
 import Screen from "./screen";
+import readline from "readline";
+const { nogClient } = require("nog");
+const { nog } = nogClient;
 
 class Liet extends Editor {
 	mode: string = "";
 	screen = new Screen();
 
 	start(filename?: string) {	
-		/*if (filename) {
-			let buf;
+		nog("hello world", [1, 2, 3, 4, 5]);
+		if (filename) {
 			fs.readFile(filename, 'utf8', (err, data) => {
 				if (err) {
 					console.error(err);
 					return;
 				}
 
-				buf = this.insertText(data, this.col - 1);
-				this.currentLineLength = data.length;
-				
-				console.log(buf);
+				const arr = data.split("\n");
+				this.setMem(arr);
+				process.stdout.write(data);
 			})
+		}
 
-			this.cursor.red().bg.grey();
-		}*/
-
-		/*const handleKeypress = (c, k) => {
+		const handleKeypress = (c: any, k: any) => {
+			//console.log(c, k);
 			let keymap = this.keymaps.find(km => km.key === k.name);
 			if (keymap) {
 				keymap.action();
 			} else {
 				console.clear();
-				console.log(this.actions.text(k.name));
+				// console.log(this.actions.text(k.name));
 
-				this.cursor.goto(this.col, 0);
+				/* this.cursor.goto(this.col, 0); */
 			}
-		}*/
+		}
 
-		//process.stdin.on("keypress", handleKeypress);
+		readline.emitKeypressEvents(process.stdin);	
+		if (process.stdin.isTTY) {
+			process.stdin.setRawMode(true);
+		}
+
+		process.stdin.on("keypress", handleKeypress);
 	}
 
-	/*actions = {
+	actions = {
 		moveCursorTop: () => {
-			readline.moveCursor(process.stdin, 0, -1);
-			if (this.row != 1) this.row--;
+			this.screen.moveUp();
 		},
 		moveCursorBottom: () => {
-			if (this.lines == this.row) return;
-			this.row++;
-			readline.moveCursor(process.stdin, 0, 1);
+			this.screen.moveDown();
 		},
 		moveCursorLeft: () => {
-			readline.moveCursor(process.stdin, -1, 0);
-			if (this.col != 1) this.col--;
+			this.screen.moveLeft();
 		},
 		moveCursorRight: () => {
-			if (this.currentLineLength < this.col) return		
-			readline.moveCursor(process.stdin, 1, 0);
-			this.col++;
+			this.screen.moveRight();
 		},
 		quit: () => {
-			readline.moveCursor(process.stdin, -this.col, -this.row);
-			this.cursor.reset();
 			process.exit();
-			console.clear();
 		},
-		insert: () => {
+		/*insert: () => {
 			this.mode = "insert";
 		},
 		text: (input) => {
 			return this.insertText(input, this.col - 1);
-		}
-	}*/
+		}*/
+	}
 
-	/*keymaps = [
+	keymaps = [
 		{
 			key: "k",
 			action: this.actions.moveCursorTop
@@ -96,11 +93,11 @@ class Liet extends Editor {
 			key: "q",
 			action: this.actions.quit
 		},
-		{
+		/*{
 			key: "i",
 			action: this.actions.insert
-		}
-	]*/
+		}*/
+	]
 }
 
 const liet = new Liet();

@@ -10,13 +10,15 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var _Editor_instances, _Editor_buf, _Editor_gap_size, _Editor_gap_left, _Editor_gap_right, _Editor_size, _Editor_grow, _Editor_left, _Editor_right, _Editor_moveCursor, _Editor_insert;
+var _Editor_instances, _Editor_buf, _Editor_mem, _Editor_lines, _Editor_gap_size, _Editor_gap_left, _Editor_gap_right, _Editor_size, _Editor_grow, _Editor_left, _Editor_right, _Editor_moveCursor, _Editor_insert;
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_buffer_1 = require("node:buffer");
 class Editor {
     constructor() {
         _Editor_instances.add(this);
         _Editor_buf.set(this, node_buffer_1.Buffer.alloc(1024));
+        _Editor_mem.set(this, []);
+        _Editor_lines.set(this, 0);
         _Editor_gap_size.set(this, 10);
         _Editor_gap_left.set(this, 0);
         _Editor_gap_right.set(this, __classPrivateFieldGet(this, _Editor_gap_size, "f") - __classPrivateFieldGet(this, _Editor_gap_left, "f") - 1);
@@ -27,8 +29,12 @@ class Editor {
         __classPrivateFieldGet(this, _Editor_instances, "m", _Editor_insert).call(this, bufferedText, position);
         return __classPrivateFieldGet(this, _Editor_buf, "f").toString("utf8");
     }
+    setMem(mem) {
+        __classPrivateFieldSet(this, _Editor_mem, mem, "f");
+        __classPrivateFieldSet(this, _Editor_lines, mem.length, "f");
+    }
 }
-_Editor_buf = new WeakMap(), _Editor_gap_size = new WeakMap(), _Editor_gap_left = new WeakMap(), _Editor_gap_right = new WeakMap(), _Editor_size = new WeakMap(), _Editor_instances = new WeakSet(), _Editor_grow = function _Editor_grow(k, position) {
+_Editor_buf = new WeakMap(), _Editor_mem = new WeakMap(), _Editor_lines = new WeakMap(), _Editor_gap_size = new WeakMap(), _Editor_gap_left = new WeakMap(), _Editor_gap_right = new WeakMap(), _Editor_size = new WeakMap(), _Editor_instances = new WeakSet(), _Editor_grow = function _Editor_grow(k, position) {
     let temp = node_buffer_1.Buffer.alloc(__classPrivateFieldGet(this, _Editor_size, "f"));
     for (let i = position; i < __classPrivateFieldGet(this, _Editor_size, "f"); i++) {
         temp[i - position] = __classPrivateFieldGet(this, _Editor_buf, "f")[i];

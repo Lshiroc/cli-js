@@ -5,46 +5,41 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_process_1 = __importDefault(require("node:process"));
+const node_fs_1 = __importDefault(require("node:fs"));
 const editor_1 = __importDefault(require("./editor"));
 const screen_1 = __importDefault(require("./screen"));
+const readline_1 = __importDefault(require("readline"));
+const { nogClient } = require("nog");
+const { nog } = nogClient;
 class Liet extends editor_1.default {
     constructor() {
         super(...arguments);
         this.mode = "";
         this.screen = new screen_1.default();
-        /*actions = {
+        this.actions = {
             moveCursorTop: () => {
-                readline.moveCursor(process.stdin, 0, -1);
-                if (this.row != 1) this.row--;
+                this.screen.moveUp();
             },
             moveCursorBottom: () => {
-                if (this.lines == this.row) return;
-                this.row++;
-                readline.moveCursor(process.stdin, 0, 1);
+                this.screen.moveDown();
             },
             moveCursorLeft: () => {
-                readline.moveCursor(process.stdin, -1, 0);
-                if (this.col != 1) this.col--;
+                this.screen.moveLeft();
             },
             moveCursorRight: () => {
-                if (this.currentLineLength < this.col) return
-                readline.moveCursor(process.stdin, 1, 0);
-                this.col++;
+                this.screen.moveRight();
             },
             quit: () => {
-                readline.moveCursor(process.stdin, -this.col, -this.row);
-                this.cursor.reset();
-                process.exit();
-                console.clear();
+                node_process_1.default.exit();
             },
-            insert: () => {
+            /*insert: () => {
                 this.mode = "insert";
             },
             text: (input) => {
                 return this.insertText(input, this.col - 1);
-            }
-        }*/
-        /*keymaps = [
+            }*/
+        };
+        this.keymaps = [
             {
                 key: "k",
                 action: this.actions.moveCursorTop
@@ -65,41 +60,42 @@ class Liet extends editor_1.default {
                 key: "q",
                 action: this.actions.quit
             },
-            {
+            /*{
                 key: "i",
                 action: this.actions.insert
-            }
-        ]*/
+            }*/
+        ];
     }
     start(filename) {
-        /*if (filename) {
-            let buf;
-            fs.readFile(filename, 'utf8', (err, data) => {
+        nog("hello world", [1, 2, 3, 4, 5]);
+        if (filename) {
+            node_fs_1.default.readFile(filename, 'utf8', (err, data) => {
                 if (err) {
                     console.error(err);
                     return;
                 }
-
-                buf = this.insertText(data, this.col - 1);
-                this.currentLineLength = data.length;
-                
-                console.log(buf);
-            })
-
-            this.cursor.red().bg.grey();
-        }*/
-        /*const handleKeypress = (c, k) => {
+                const arr = data.split("\n");
+                this.setMem(arr);
+                node_process_1.default.stdout.write(data);
+            });
+        }
+        const handleKeypress = (c, k) => {
+            //console.log(c, k);
             let keymap = this.keymaps.find(km => km.key === k.name);
             if (keymap) {
                 keymap.action();
-            } else {
-                console.clear();
-                console.log(this.actions.text(k.name));
-
-                this.cursor.goto(this.col, 0);
             }
-        }*/
-        //process.stdin.on("keypress", handleKeypress);
+            else {
+                console.clear();
+                // console.log(this.actions.text(k.name));
+                /* this.cursor.goto(this.col, 0); */
+            }
+        };
+        readline_1.default.emitKeypressEvents(node_process_1.default.stdin);
+        if (node_process_1.default.stdin.isTTY) {
+            node_process_1.default.stdin.setRawMode(true);
+        }
+        node_process_1.default.stdin.on("keypress", handleKeypress);
     }
 }
 const liet = new Liet();

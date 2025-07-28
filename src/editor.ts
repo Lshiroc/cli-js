@@ -2,6 +2,8 @@ import { Buffer } from "node:buffer";
 
 class Editor {
 	#buf = Buffer.alloc(1024);
+	#mem: string[] = [];
+	#lines = 0;
 	#gap_size = 10;
 	#gap_left = 0;
 	#gap_right = this.#gap_size - this.#gap_left - 1;
@@ -77,6 +79,11 @@ class Editor {
 		let bufferedText = Buffer.from(input, "utf8");
 		this.#insert(bufferedText, position);
 		return this.#buf.toString("utf8");
+	}
+
+	setMem(mem: string[]) {
+		this.#mem = mem;
+		this.#lines = mem.length;
 	}
 }
 
