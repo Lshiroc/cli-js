@@ -1,91 +1,107 @@
 "use strict";
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
-var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
-    if (kind === "m") throw new TypeError("Private method is not writable");
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
-};
-var _Editor_instances, _Editor_buf, _Editor_mem, _Editor_lines, _Editor_gap_size, _Editor_gap_left, _Editor_gap_right, _Editor_size, _Editor_grow, _Editor_left, _Editor_right, _Editor_moveCursor, _Editor_insert;
 Object.defineProperty(exports, "__esModule", { value: true });
-const node_buffer_1 = require("node:buffer");
+exports.GapBuffer = void 0;
 class Editor {
     constructor() {
-        _Editor_instances.add(this);
-        _Editor_buf.set(this, node_buffer_1.Buffer.alloc(1024));
-        _Editor_mem.set(this, []);
-        _Editor_lines.set(this, 0);
-        _Editor_gap_size.set(this, 10);
-        _Editor_gap_left.set(this, 0);
-        _Editor_gap_right.set(this, __classPrivateFieldGet(this, _Editor_gap_size, "f") - __classPrivateFieldGet(this, _Editor_gap_left, "f") - 1);
-        _Editor_size.set(this, 10);
+        this.mem = [];
     }
-    insertText(input, position) {
-        let bufferedText = node_buffer_1.Buffer.from(input, "utf8");
-        __classPrivateFieldGet(this, _Editor_instances, "m", _Editor_insert).call(this, bufferedText, position);
-        return __classPrivateFieldGet(this, _Editor_buf, "f").toString("utf8");
+    init(str) {
+        const data = str.split("\n");
+        for (let i = 0; i < data.length; i++) {
+            let tempLineBuf = new GapBuffer(data[i]);
+            this.mem.push(tempLineBuf);
+        }
     }
-    setMem(mem) {
-        __classPrivateFieldSet(this, _Editor_mem, mem, "f");
-        __classPrivateFieldSet(this, _Editor_lines, mem.length, "f");
+    get text() {
+        let temp = [];
+        for (let i = 0; i < this.mem.length; i++) {
+            temp.push(this.mem[i].text);
+        }
+        return temp.join("\n");
+    }
+    insert(input, col, row) {
+        if (this.mem.length > 0) {
+            this.mem[row].insert(input, col);
+        }
+        else {
+            let temp = new GapBuffer();
+            temp.insert(input, col);
+            this.mem.push(temp);
+        }
     }
 }
-_Editor_buf = new WeakMap(), _Editor_mem = new WeakMap(), _Editor_lines = new WeakMap(), _Editor_gap_size = new WeakMap(), _Editor_gap_left = new WeakMap(), _Editor_gap_right = new WeakMap(), _Editor_size = new WeakMap(), _Editor_instances = new WeakSet(), _Editor_grow = function _Editor_grow(k, position) {
-    let temp = node_buffer_1.Buffer.alloc(__classPrivateFieldGet(this, _Editor_size, "f"));
-    for (let i = position; i < __classPrivateFieldGet(this, _Editor_size, "f"); i++) {
-        temp[i - position] = __classPrivateFieldGet(this, _Editor_buf, "f")[i];
-    }
-    for (let i = position; i < k; i++) {
-        __classPrivateFieldGet(this, _Editor_buf, "f")[i] = +"_".charCodeAt(0).toString(16);
-    }
-    for (let i = 0; i < position + k; i++) {
-        __classPrivateFieldGet(this, _Editor_buf, "f")[position + k + i] = temp[i];
-    }
-    __classPrivateFieldSet(this, _Editor_size, __classPrivateFieldGet(this, _Editor_size, "f") + k, "f");
-    __classPrivateFieldSet(this, _Editor_gap_right, __classPrivateFieldGet(this, _Editor_gap_right, "f") + k, "f");
-}, _Editor_left = function _Editor_left(position) {
-    var _a, _b;
-    while (position < __classPrivateFieldGet(this, _Editor_gap_left, "f")) {
-        __classPrivateFieldSet(this, _Editor_gap_left, (_a = __classPrivateFieldGet(this, _Editor_gap_left, "f"), _a--, _a), "f");
-        __classPrivateFieldSet(this, _Editor_gap_right, (_b = __classPrivateFieldGet(this, _Editor_gap_right, "f"), _b--, _b), "f");
-        __classPrivateFieldGet(this, _Editor_buf, "f")[__classPrivateFieldGet(this, _Editor_gap_right, "f") + 1] = __classPrivateFieldGet(this, _Editor_buf, "f")[__classPrivateFieldGet(this, _Editor_gap_left, "f")];
-        __classPrivateFieldGet(this, _Editor_buf, "f")[__classPrivateFieldGet(this, _Editor_gap_left, "f")] = +"_".charCodeAt(0).toString(16);
-    }
-}, _Editor_right = function _Editor_right(position) {
-    var _a, _b;
-    while (position > __classPrivateFieldGet(this, _Editor_gap_left, "f")) {
-        __classPrivateFieldSet(this, _Editor_gap_left, (_a = __classPrivateFieldGet(this, _Editor_gap_left, "f"), _a++, _a), "f");
-        __classPrivateFieldSet(this, _Editor_gap_right, (_b = __classPrivateFieldGet(this, _Editor_gap_right, "f"), _b++, _b), "f");
-        __classPrivateFieldGet(this, _Editor_buf, "f")[__classPrivateFieldGet(this, _Editor_gap_left, "f") - 1] = __classPrivateFieldGet(this, _Editor_buf, "f")[__classPrivateFieldGet(this, _Editor_gap_right, "f")];
-        __classPrivateFieldGet(this, _Editor_buf, "f")[__classPrivateFieldGet(this, _Editor_gap_right, "f")] = +"_".charCodeAt(0).toString(16);
-    }
-}, _Editor_moveCursor = function _Editor_moveCursor(position) {
-    if (position < __classPrivateFieldGet(this, _Editor_gap_left, "f")) {
-        __classPrivateFieldGet(this, _Editor_instances, "m", _Editor_left).call(this, position);
-    }
-    else {
-        __classPrivateFieldGet(this, _Editor_instances, "m", _Editor_right).call(this, position);
-    }
-}, _Editor_insert = function _Editor_insert(input, position) {
-    var _a;
-    let len = input.length;
-    let i = 0;
-    if (position != __classPrivateFieldGet(this, _Editor_gap_left, "f")) {
-        __classPrivateFieldGet(this, _Editor_instances, "m", _Editor_moveCursor).call(this, position);
-    }
-    while (i < len) {
-        if (__classPrivateFieldGet(this, _Editor_gap_right, "f") == __classPrivateFieldGet(this, _Editor_gap_left, "f")) {
-            let k = 10;
-            __classPrivateFieldGet(this, _Editor_instances, "m", _Editor_grow).call(this, k, position);
+class GapBuffer {
+    constructor(str) {
+        this.buffer = new Array(10).fill("_");
+        this.gap_size = 10;
+        this.gap_left = 0;
+        this.gap_right = this.gap_size - this.gap_left - 1;
+        this.size = 10;
+        if (str) {
+            this.insert(str, 0);
         }
-        __classPrivateFieldGet(this, _Editor_buf, "f")[__classPrivateFieldGet(this, _Editor_gap_left, "f")] = input[i];
-        __classPrivateFieldSet(this, _Editor_gap_left, (_a = __classPrivateFieldGet(this, _Editor_gap_left, "f"), _a++, _a), "f");
-        i++;
-        position++;
     }
-};
+    grow(k, position) {
+        let a = this.buffer.slice(position, this.size);
+        this.buffer.splice(position, this.size - position, ...("_".repeat(k)));
+        this.buffer.splice(position + k, 0, ...a);
+        this.size += k;
+        this.gap_right += k;
+    }
+    left(position) {
+        while (position < this.gap_left) {
+            this.gap_left--;
+            this.gap_right--;
+            this.buffer[this.gap_right + 1] = this.buffer[this.gap_left];
+            this.buffer[this.gap_left] = "_";
+        }
+    }
+    right(position) {
+        while (position > this.gap_left) {
+            this.gap_left++;
+            this.gap_right++;
+            this.buffer[this.gap_left - 1] = this.buffer[this.gap_right];
+            this.buffer[this.gap_right] = "_";
+        }
+    }
+    move_cursor(position) {
+        if (position < this.gap_left) {
+            this.left(position);
+        }
+        else {
+            this.right(position);
+        }
+    }
+    insert(input, position) {
+        let len = input.length;
+        let i = 0;
+        if (position != this.gap_left) {
+            this.move_cursor(position);
+        }
+        while (i < len) {
+            if (this.gap_left === this.gap_right) {
+                let k = 10;
+                this.grow(10, position);
+            }
+            this.buffer[this.gap_left] = input.charAt(i);
+            this.gap_left++;
+            i++;
+            position++;
+        }
+        return this.buffer.join("");
+    }
+    delete(position) {
+        if (position + 1 != this.gap_left) {
+            this.move_cursor(position + 1);
+        }
+        this.gap_left--;
+        this.buffer[this.gap_left] = "_";
+    }
+    get text() {
+        let beforeGap = this.buffer.slice(0, this.gap_left);
+        let afterGap = this.buffer.slice(this.gap_right + 1);
+        return beforeGap.join("") + afterGap.join("");
+    }
+}
+exports.GapBuffer = GapBuffer;
 exports.default = Editor;

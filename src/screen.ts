@@ -1,12 +1,19 @@
 import process from "node:process";
 import ansiEscapes from "ansi-escapes";
 import readline from "readline";
+const { nogClient } = require("nog");
+const { nog } = nogClient;
+import { GapBuffer } from "./editor";
 
 class Screen {
 	row = 1;
 	col = 1;
+	loc: GapBuffer[] = [];
 
-	constructor() {
+	constructor(mem?: GapBuffer[]) {
+		if (mem) {
+			this.loc = mem;
+		}
 		process.stdout.write(ansiEscapes.clearTerminal);
 		readline.emitKeypressEvents(process.stdin);	
 		if (process.stdin.isTTY) {
@@ -14,22 +21,40 @@ class Screen {
 		}
 	}
 
-	moveRight() {
-		process.stdout.write(ansiEscapes.cursorForward(++this.col));
+	moveRight(n?: number) {
+		const currColLen = this.loc[this.row - 1].text.length;
+		if (currColLen <= this.col) return;
+		process.stdout.write(ansiEscapes.cursorForward(n ?? 1));
+		this.col++;
 	}
 
-	moveLeft() {
+	moveLeft(n?: number) {
 		if (this.col == 1) return;
-		process.stdout.write(ansiEscapes.cursorBackward(--this.col));
+		process.stdout.write(ansiEscapes.cursorBackward(n ?? 1));
+		this.col--;
 	}
 
-	moveUp() {
+	moveUp(n?: number) {
 		if (this.row == 1) return;
-		process.stdout.write(ansiEscapes.cursorUp(--this.row));
+		process.stdout.write(ansiEscapes.cursorUp(n ?? 1));
+		this.row--;
 	}
 
-	moveDown() {
-		process.stdout.write(ansiEscapes.cursorDown(++this.row));
+	moveDown(n?: number) {
+		if (this.loc.length - 1 <= this.row) return;
+		process.stdout.write(ansiEscapes.cursorDown(n ?? 1));
+		this.row++;
+	}
+
+	startPosition() {
+		process.stdout.write(ansiEscapes.cursorTo(0, 0));
+	}
+
+	newLine() {
+		process.stdout.write(ansiEscapes.cursorNextLine);
+		this.row++;
+		this.col = 0;
+		this.loc.push(new GapBuffer());
 	}
 }
 

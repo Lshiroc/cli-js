@@ -1,89 +1,118 @@
-import { Buffer } from "node:buffer";
-
 class Editor {
-	#buf = Buffer.alloc(1024);
-	#mem: string[] = [];
-	#lines = 0;
-	#gap_size = 10;
-	#gap_left = 0;
-	#gap_right = this.#gap_size - this.#gap_left - 1;
-	#size = 10;
+	mem: GapBuffer[] = [];
 
-	#grow(k: number, position: number) {
-		let temp = Buffer.alloc(this.#size);
-
-		for (let i = position; i < this.#size; i++) {
-			temp[i - position] = this.#buf[i];	
-		}
-
-		for (let i = position; i < k; i++) {
-			this.#buf[i] = +"_".charCodeAt(0).toString(16);
-		}
-
-		for (let i = 0; i < position + k; i++) {
-			this.#buf[position + k + i] = temp[i];
-		}
-
-		this.#size += k;
-		this.#gap_right += k;
-	}
-
-	#left(position: number) {
-		while (position < this.#gap_left) {
-			this.#gap_left--;	
-			this.#gap_right--;
-			this.#buf[this.#gap_right + 1] = this.#buf[this.#gap_left];
-			this.#buf[this.#gap_left] = +"_".charCodeAt(0).toString(16);
+	init(str: string) {
+		const data = str.split("\n");
+		for (let i = 0; i < data.length; i++) {
+			let tempLineBuf = new GapBuffer(data[i]);
+			this.mem.push(tempLineBuf);
 		}
 	}
 
-	#right(position: number) {
-		while (position > this.#gap_left) {
-			this.#gap_left++;
-			this.#gap_right++;
-			this.#buf[this.#gap_left - 1] = this.#buf[this.#gap_right];
-			this.#buf[this.#gap_right] = +"_".charCodeAt(0).toString(16);
+	get text() {
+		let temp = [];
+		for (let i = 0; i < this.mem.length; i++) {
+			temp.push(this.mem[i].text);
 		}
+
+		return temp.join("\n");
 	}
 
-	#moveCursor(position: number) {
-		if (position < this.#gap_left) {
-			this.#left(position);
+	insert(input: string, col: number, row: number) {
+		if (this.mem.length > 0) {
+			this.mem[row].insert(input, col);
 		} else {
-			this.#right(position);
+			let temp = new GapBuffer();
+			temp.insert(input, col);
+			this.mem.push(temp);
+		}
+	}
+}
+
+export class GapBuffer {
+	buffer = new Array(10).fill("_");
+	gap_size = 10;
+	gap_left = 0;
+	gap_right = this.gap_size - this.gap_left - 1;
+	size = 10;
+
+	constructor(str?: string) {
+		if (str) {
+			this.insert(str, 0);
 		}
 	}
 
-	#insert(input: Buffer<ArrayBuffer>, position: number) {
+	grow(k: number, position: number) {
+		let a = this.buffer.slice(position, this.size);
+
+		this.buffer.splice(position, this.size - position, ...("_".repeat(k)));
+		this.buffer.splice(position + k, 0, ...a);
+		this.size += k;
+		this.gap_right += k;
+	}
+
+	left(position: number) {
+		while (position < this.gap_left) {
+			this.gap_left--;
+			this.gap_right--;
+			this.buffer[this.gap_right + 1] = this.buffer[this.gap_left];
+			this.buffer[this.gap_left] = "_";
+		}
+	}
+
+	right(position: number) {
+		while (position > this.gap_left) {
+			this.gap_left++;
+			this.gap_right++;
+			this.buffer[this.gap_left - 1] = this.buffer[this.gap_right];
+			this.buffer[this.gap_right] = "_"; 
+		}
+	}
+
+	move_cursor(position: number) {
+		if (position < this.gap_left) {
+			this.left(position);
+		} else {
+			this.right(position);
+		}
+	}
+
+	insert(input: string, position: number) {
 		let len = input.length;
 		let i = 0;
 
-		if (position != this.#gap_left) {
-			this.#moveCursor(position);
+		if (position != this.gap_left) {
+			this.move_cursor(position);
 		}
 
 		while (i < len) {
-			if (this.#gap_right == this.#gap_left) {
+			if (this.gap_left === this.gap_right) {
 				let k = 10;
-				this.#grow(k, position);
+				this.grow(10, position);
 			}
 
-			this.#buf[this.#gap_left] = input[i];
-			this.#gap_left++;
+			this.buffer[this.gap_left] = input.charAt(i);
+			this.gap_left++;
 			i++;
 			position++;
 		}
+
+		return this.buffer.join("");
 	}
 
-	insertText(input: string, position: number) {
-		let bufferedText = Buffer.from(input, "utf8");
-		this.#insert(bufferedText, position);
-		return this.#buf.toString("utf8");
+	delete(position: number) {
+		if (position + 1 != this.gap_left) {
+			this.move_cursor(position + 1);
+		}
+		this.gap_left--;
+		this.buffer[this.gap_left] = "_";
 	}
 
-	setMem(mem: string[]) {
-		this.#mem = mem;
-		this.#lines = mem.length;
+	get text() {
+		let beforeGap = this.buffer.slice(0, this.gap_left);
+		let afterGap = this.buffer.slice(this.gap_right + 1);
+
+		return beforeGap.join("") + afterGap.join("");
 	}
 }
 
